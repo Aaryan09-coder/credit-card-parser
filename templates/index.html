@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Credit Card Statement Parser</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #f5f5f5;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .container {
+      background: white;
+      padding: 40px;
+      border-radius: 12px;
+      max-width: 900px;
+      width: 100%;
+      margin: 0 auto;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    header {
+      border-bottom: 2px solid #e5e5e5;
+      padding-bottom: 24px;
+      margin-bottom: 32px;
+    }
+
+    h1 {
+      color: #1a1a1a;
+      font-size: 32px;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    .info-section {
+      background: #fafafa;
+      border-left: 4px solid #404040;
+      padding: 20px;
+      margin-bottom: 32px;
+      border-radius: 6px;
+    }
+
+    .info-section h3 {
+      color: #1a1a1a;
+      font-size: 16px;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+
+    .info-section ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .info-section li {
+      color: #4d4d4d;
+      font-size: 14px;
+      line-height: 1.7;
+      padding-left: 24px;
+      position: relative;
+      margin-bottom: 8px;
+    }
+
+    .info-section li:before {
+      content: "•";
+      position: absolute;
+      left: 8px;
+      color: #666;
+      font-weight: bold;
+    }
+
+    .section-title {
+      color: #1a1a1a;
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .step-number {
+      background: #404040;
+      color: white;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .upload-section {
+      border: 2px dashed #d4d4d4;
+      border-radius: 8px;
+      padding: 40px;
+      text-align: center;
+      background: #fafafa;
+      transition: all 0.3s ease;
+      margin-bottom: 20px;
+    }
+
+    .upload-section:hover {
+      border-color: #666;
+      background: #f5f5f5;
+    }
+
+    .upload-section.dragover {
+      border-color: #404040;
+      background: #f0f0f0;
+      border-style: solid;
+    }
+
+    .upload-icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 16px;
+      color: #666;
+    }
+
+    .upload-text {
+      color: #1a1a1a;
+      font-size: 16px;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+
+    .upload-subtext {
+      color: #737373;
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    .file-input-wrapper {
+      position: relative;
+      display: inline-block;
+      cursor: pointer;
+    }
+
+    input[type="file"] {
+      position: absolute;
+      left: -9999px;
+    }
+
+    .file-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 28px;
+      background: #404040;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 15px;
+      transition: all 0.2s ease;
+    }
+
+    .file-label:hover {
+      background: #1a1a1a;
+    }
+
+    .file-name {
+      margin-top: 16px;
+      color: #404040;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+      justify-content: center;
+    }
+
+    button {
+      padding: 14px 32px;
+      border: none;
+      border-radius: 6px;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .btn-primary {
+      background: #404040;
+      color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #1a1a1a;
+    }
+
+    .btn-primary:disabled {
+      background: #d4d4d4;
+      cursor: not-allowed;
+      color: #8c8c8c;
+    }
+
+    .btn-secondary {
+      background: #e5e5e5;
+      color: #1a1a1a;
+    }
+
+    .btn-secondary:hover {
+      background: #d4d4d4;
+    }
+
+    .result-section {
+      margin-top: 32px;
+      display: none;
+      padding-top: 32px;
+      border-top: 2px solid #e5e5e5;
+    }
+
+    .result-section.active {
+      display: block;
+    }
+
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .result-header h3 {
+      color: #1a1a1a;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .status {
+      padding: 6px 14px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .status.processing {
+      background: #f0f0f0;
+      color: #404040;
+    }
+
+    .status.success {
+      background: #e5e5e5;
+      color: #1a1a1a;
+    }
+
+    .status.error {
+      background: #f5f5f5;
+      color: #1a1a1a;
+      border: 1px solid #d4d4d4;
+    }
+
+    #result {
+      background: #fafafa;
+      padding: 0;
+      border-radius: 6px;
+      border: 1px solid #e5e5e5;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+
+    .result-item {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      padding: 16px 24px;
+      border-bottom: 1px solid #e5e5e5;
+      transition: background 0.2s ease;
+    }
+
+    .result-item:last-child {
+      border-bottom: none;
+    }
+
+    .result-item:hover {
+      background: #f5f5f5;
+    }
+
+    .result-label {
+      font-weight: 600;
+      color: #404040;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+    }
+
+    .result-value {
+      color: #1a1a1a;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      word-break: break-word;
+    }
+
+    .result-value.na {
+      color: #999;
+      font-style: italic;
+    }
+
+    .result-value.currency {
+      font-weight: 500;
+      font-family: 'Monaco', 'Courier New', monospace;
+    }
+
+    .issuer-badge {
+      display: inline-block;
+      background: #404040;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+    }
+
+    #result::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    #result::-webkit-scrollbar-track {
+      background: #f0f0f0;
+      border-radius: 5px;
+    }
+
+    #result::-webkit-scrollbar-thumb {
+      background: #c0c0c0;
+      border-radius: 5px;
+    }
+
+    #result::-webkit-scrollbar-thumb:hover {
+      background: #a0a0a0;
+    }
+
+    .expected-output {
+      background: #fafafa;
+      border: 1px solid #e5e5e5;
+      border-radius: 6px;
+      padding: 20px;
+      margin-bottom: 32px;
+    }
+
+    .expected-output h4 {
+      color: #1a1a1a;
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .expected-output p {
+      color: #4d4d4d;
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+
+    .expected-output ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .expected-output li {
+      color: #4d4d4d;
+      font-size: 14px;
+      padding-left: 20px;
+      position: relative;
+      margin-bottom: 6px;
+    }
+
+    .expected-output li:before {
+      content: "→";
+      position: absolute;
+      left: 0;
+      color: #666;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 24px;
+      }
+
+      h1 {
+        font-size: 26px;
+      }
+
+      .upload-section {
+        padding: 30px 20px;
+      }
+
+      .button-group {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Credit Card Statement Parser</h1>
+      <p class="subtitle">Automatically extract and analyze data from your credit card statements</p>
+    </header>
+
+    <div class="info-section">
+      <h3>How It Works</h3>
+      <ul>
+        <li>Upload your credit card statement in PDF or image format (JPG, PNG)</li>
+        <li>Our system will process and extract key information from the document</li>
+        <li>View structured data including transactions, totals, dates, and account details</li>
+      </ul>
+    </div>
+
+    <div class="expected-output">
+      <h4>What to Expect</h4>
+      <p>After processing, you'll receive structured data containing:</p>
+      <ul>
+        <li>Card issuer (bank or financial institution)</li>
+        <li>Statement date and payment due date</li>
+        <li>Card last 4 digits</li>
+        <li>Total balance due</li>
+        <li>Minimum payment amount</li>
+      </ul>
+    </div>
+
+    <form id="uploadForm" enctype="multipart/form-data">
+      <div class="section-title">
+        <span class="step-number">1</span>
+        <span>Select Your Statement File</span>
+      </div>
+
+      <div class="upload-section" id="uploadSection">
+        <svg class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+        </svg>
+        <div class="upload-text">Drag and drop your file here</div>
+        <div class="upload-subtext">or click below to browse</div>
+        
+        <div class="file-input-wrapper">
+          <input type="file" name="file" id="file" accept=".pdf,.png,.jpg,.jpeg" required>
+          <label for="file" class="file-label">
+            Browse Files
+          </label>
+        </div>
+        <div class="file-name" id="fileName">No file selected</div>
+      </div>
+<div class="section-title">
+  <span class="step-number">1b</span>
+  <span>PDF Password (if protected)</span>
+</div>
+
+<div style="margin-bottom: 20px; position: relative;">
+  <input 
+    type="password" 
+    name="password" 
+    id="password" 
+    placeholder="Enter password if your PDF is protected" 
+    style="width: 100%; padding: 12px 40px 12px 16px; border-radius: 6px; border: 1px solid #d4d4d4; font-size: 14px;"
+  >
+  <button 
+    type="button" 
+    id="togglePassword" 
+    style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); border: none; background: none; cursor: pointer; font-size: 14px; color: #404040;"
+  >
+    Show
+  </button>
+</div>
+
+<script>
+  const passwordInput = document.getElementById("password");
+  const toggleBtn = document.getElementById("togglePassword");
+
+  toggleBtn.addEventListener("click", () => {
+    if (passwordInput.type === "password") {
+      passwordInput.type = "text";
+      toggleBtn.textContent = "Hide";
+    } else {
+      passwordInput.type = "password";
+      toggleBtn.textContent = "Show";
+    }
+  });
+</script>
+ 
+      <div class="section-title">
+        <span class="step-number">2</span>
+        <span>Process Statement</span>
+      </div>
+
+      <div class="button-group">
+        <button type="submit" class="btn-primary" id="submitBtn" disabled>
+          <span id="submitText">Upload & Parse Statement</span>
+        </button>
+      </div>
+    </form>
+
+    <div class="result-section" id="resultSection">
+      <div class="result-header">
+        <h3>Parsed Results</h3>
+        <span class="status" id="status">Processing</span>
+      </div>
+      <div id="result"></div>
+      <div class="button-group" style="margin-top: 24px;">
+        <button type="button" class="btn-secondary" id="uploadNewBtn">
+          Upload New Statement
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById("file");
+    const fileName = document.getElementById("fileName");
+    const submitBtn = document.getElementById("submitBtn");
+    const uploadSection = document.getElementById("uploadSection");
+    const resultSection = document.getElementById("resultSection");
+    const resultDiv = document.getElementById("result");
+    const statusSpan = document.getElementById("status");
+    const uploadNewBtn = document.getElementById("uploadNewBtn");
+
+    fileInput.addEventListener("change", (e) => {
+      if (e.target.files.length > 0) {
+        const file = e.target.files[0];
+        fileName.textContent = `Selected: ${file.name}`;
+        submitBtn.disabled = false;
+      } else {
+        fileName.textContent = "No file selected";
+        submitBtn.disabled = true;
+      }
+    });
+
+    // Drag and drop
+    uploadSection.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      uploadSection.classList.add("dragover");
+    });
+
+    uploadSection.addEventListener("dragleave", () => {
+      uploadSection.classList.remove("dragover");
+    });
+
+    uploadSection.addEventListener("drop", (e) => {
+      e.preventDefault();
+      uploadSection.classList.remove("dragover");
+      
+      if (e.dataTransfer.files.length > 0) {
+        fileInput.files = e.dataTransfer.files;
+        const file = e.dataTransfer.files[0];
+        fileName.textContent = `Selected: ${file.name}`;
+        submitBtn.disabled = false;
+      }
+    });
+
+    document.getElementById("uploadForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const file = fileInput.files[0];
+  const password = document.getElementById("password").value; // grab password
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("password", password); // send password to server
+
+  resultSection.classList.add("active");
+  statusSpan.className = "status processing";
+  statusSpan.textContent = "Processing";
+  resultDiv.innerHTML = '<div style="padding: 24px; color: #666;">Processing your statement... This may take a few moments.</div>';
+  submitBtn.disabled = true;
+
+  try {
+    const res = await fetch("/parse", { method: "POST", body: formData });
+
+    const contentType = res.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      const textResponse = await res.text();
+      console.error("Non-JSON response:", textResponse);
+      throw new Error("Server returned an invalid response. Please check if the Flask server is running correctly.");
+    }
+
+    const data = await res.json();
+
+    if (res.ok) {
+      statusSpan.className = "status success";
+      statusSpan.textContent = "Complete";
+      displayResults(data);
+    } else {
+      throw new Error(data.error || "Failed to parse file");
+    }
+  } catch (error) {
+    statusSpan.className = "status error";
+    statusSpan.textContent = "Error";
+    resultDiv.innerHTML = `<div style="padding: 24px; color: #1a1a1a; white-space: pre-wrap;">Error: ${error.message}\n\nPlease ensure your file is valid and the password is correct.</div>`;
+  } finally {
+    submitBtn.disabled = false;
+  }
+});
+
+
+    uploadNewBtn.addEventListener("click", () => {
+      fileInput.value = "";
+      fileName.textContent = "No file selected";
+      submitBtn.disabled = true;
+      resultSection.classList.remove("active");
+      resultDiv.innerHTML = "";
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    function displayResults(data) {
+  // Remove raw_text if present
+  const { raw_text, ...displayData } = data;
+
+  // Mapping Groq JSON keys to frontend labels
+  const fieldLabels = {
+    card_issuer: "Card Issuer",
+    statement_date: "Statement Date",
+    due_date: "Payment Due Date",
+    last_4: "Card Last 4 Digits",
+    total_balance: "Total Balance Due",
+    min_payment: "Minimum Payment Due"
+  };
+
+  let html = '<div class="result-grid">';
+
+  for (const [key, value] of Object.entries(displayData)) {
+    const label = fieldLabels[key] || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    const isNA = value === "N/A" || !value;
+    const isCurrency = key.includes('balance') || key.includes('payment');
+
+    let displayValue = value;
+
+    if (key === 'card_issuer') {
+      displayValue = `<span class="issuer-badge">${value}</span>`;
+    } else if (isCurrency && !isNA) {
+      const numValue = parseFloat(value);
+      displayValue = !isNaN(numValue) ? `$${numValue.toFixed(2)}` : value;
+    }
+
+    html += `
+      <div class="result-item">
+        <div class="result-label">${label}</div>
+        <div class="result-value ${isNA ? 'na' : ''} ${isCurrency && !isNA ? 'currency' : ''}">
+          ${isNA ? 'Not found' : displayValue}
+        </div>
+      </div>
+    `;
+  }
+
+  html += '</div>';
+  resultDiv.innerHTML = html;
+
+  // Scroll results into view
+  resultSection.scrollIntoView({ behavior: 'smooth' });
+}
+
+  </script>
+</body>
+</html>
